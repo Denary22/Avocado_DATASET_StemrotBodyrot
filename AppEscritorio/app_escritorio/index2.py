@@ -179,5 +179,7 @@ class Aplication:
         # Clear text_label content
         self.text_label.config(text="")  # Empty string for text
 
+#hola prueba
 
 aplication = Aplication()
+
