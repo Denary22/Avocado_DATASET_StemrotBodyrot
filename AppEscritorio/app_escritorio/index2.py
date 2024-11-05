@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.vgg16 import preprocess_input
+
 
 
 url_imagen = ""
@@ -49,7 +51,7 @@ class Aplication:
         self.boton.place(x=340, y=70, width=120)
         self.boton_area = tk.Button(self.raiz, text="ÁREA DAÑADA", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.area_dañada, state="disabled")
         self.boton_area.place(x= 704, y= 166, width=260, height=47)
-        self.boton_clasific= tk.Button(self.raiz, text="CLASIFICACIÓN ENFERMEDAD", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, state="disabled")
+        self.boton_clasific= tk.Button(self.raiz, text="CLASIFICACIÓN ENFERMEDAD", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.clasificacion_imagen, state="disabled")
         self.boton_clasific.place(x= 704, y= 242, width=260, height=47)
         self.boton_maduracion = tk.Button(self.raiz, text="NIVEL DE MADURACIÓN", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, state="disabled")
         self.boton_maduracion.place(x= 704, y= 318, width=260, height=47)
@@ -73,8 +75,6 @@ class Aplication:
                     # Rotar la imagen para que quede vertical
                     self.image = self.image.rotate(90, expand=True)
 
-                # Redimensionar la imagen manteniendo la relación de aspecto sin rotarla
-                #self.image.thumbnail((280, 390))
                 # Redimensionar la imagen para que ocupe todo el espacio disponible
                 self.image = self.image.resize((270, 390), Image.Resampling.LANCZOS)
 
@@ -169,8 +169,13 @@ class Aplication:
         # Convertir la imagen RGB a un objeto Image de PIL
         op_or_pil_image = Image.fromarray(op_or)
 
-        # Redimensionar la imagen PIL al tamaño estándar manteniendo la relación de aspecto
-        op_or_pil_image.thumbnail((standard_width, standard_height))
+        # Detectar si la imagen es horizontal
+        if op_or_pil_image.width > op_or_pil_image.height:
+            # Rotar la imagen para que quede vertical
+            op_or_pil_image = op_or_pil_image.rotate(90, expand=True)
+
+        # Redimensionar la imagen para que ocupe todo el espacio disponible
+        op_or_pil_image = op_or_pil_image.resize((270, 390), Image.Resampling.LANCZOS)
 
         # Convertir la imagen PIL a un objeto PhotoImage de Tkinter
         op_or_photo = ImageTk.PhotoImage(op_or_pil_image)
@@ -184,7 +189,7 @@ class Aplication:
         text_label.place(x=0, y=0)
 
     def clasificacion_imagen(self):
-            modelo = tf.keras.models.load_model('./AppEscritorio/app_escritorio/modelo_entrenado_VGG16.keras')
+            modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
             #imagen_procesada = self.cargar_y_preprocesar_imagen(url_imagen)
             img = image.load_img(url_imagen, target_size=(224, 224))  # Asegúrate de usar el tamaño correcto para tu modelo
             img_array = image.img_to_array(img)
@@ -195,9 +200,11 @@ class Aplication:
             prediccion = modelo.predict(img_array)
 
             # Decodificar la predicción
-            clases = ['Sano', 'Enfermo_BODYROT', 'Enfermo_STEMENDROT']  # Cambia esto según tus clases
+            clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Cambia esto según tus clases
             indice_prediccion = np.argmax(prediccion[0])  # Obtener el índice de la clase con mayor probabilidad
             print(f'Predicción: {clases[indice_prediccion]}')
+            #Limpiar el texto
+            self.text_label.config(text="")
             text_label = tk.Label(self.text_label, text=f"Clasificación = {clases[indice_prediccion]} ", font=("Arial", 14, "bold"))
             text_label.place(x=0, y=10)
 
