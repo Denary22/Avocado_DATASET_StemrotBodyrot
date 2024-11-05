@@ -13,6 +13,12 @@ from rembg import remove
 from PIL import Image
 import matplotlib.pyplot as plt
 
+#Modelo CNN
+import tensorflow as tf
+import numpy as np
+from tensorflow.keras.preprocessing import image
+
+
 url_imagen = ""
 class Aplication:
     
@@ -22,7 +28,7 @@ class Aplication:
         self.raiz.geometry("1024x768") #Configurar tamaño
         self.raiz.resizable(width=0, height=0)
         #self.raiz.iconbitmap("./Imagenes/ant.ico") #Cambiar el icono
-        self.imagen= tk.PhotoImage(file="./fondo1.png")
+        self.imagen= tk.PhotoImage(file="./AppEscritorio/app_escritorio/fondo1.png")
         tk.Label(self.raiz, image=self.imagen, bd=0).pack()
 
         #Labels
@@ -51,20 +57,29 @@ class Aplication:
         self.boton_reset.place(x= 704, y= 393, width=260, height=47)
 
         self.raiz.mainloop() 
-
+    #Prue
     def seleccionar(self):
             global url_imagen
+            url_imagen = ""
             print(url_imagen)
             nomArchivo = fd.askopenfilename(initialdir= "C:/Users/USER/OneDrive/Escritorio/AImages", title= "Seleccionar Archivo", filetypes= (("Image files", "*.png; *.jpg; *.gif"),("todos los archivos", "*.*")))
             url_imagen = nomArchivo
             print(url_imagen)
             if nomArchivo!='':
                 self.image = Image.open(nomArchivo)
-                rotated_image = self.image.rotate(90, expand=True)
-                # Redimensionar la imagen PIL al tamaño estándar manteniendo la relación de aspecto
-                rotated_image.thumbnail((270, 390))
+
+                # Detectar si la imagen es horizontal
+                if self.image.width > self.image.height:
+                    # Rotar la imagen para que quede vertical
+                    self.image = self.image.rotate(90, expand=True)
+
+                # Redimensionar la imagen manteniendo la relación de aspecto sin rotarla
+                #self.image.thumbnail((280, 390))
+                # Redimensionar la imagen para que ocupe todo el espacio disponible
+                self.image = self.image.resize((270, 390), Image.Resampling.LANCZOS)
+
                 # Convertir la imagen PIL a un objeto PhotoImage de Tkinter
-                self.photo = ImageTk.PhotoImage(rotated_image)
+                self.photo = ImageTk.PhotoImage(self.image)
                 self.image_label.configure(image=self.photo)
             
                 # Habilitar botones
@@ -168,6 +183,25 @@ class Aplication:
         text_label = tk.Label(self.text_label, text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
         text_label.place(x=0, y=0)
 
+    def clasificacion_imagen(self):
+            modelo = tf.keras.models.load_model('./AppEscritorio/app_escritorio/modelo_entrenado_VGG16.keras')
+            #imagen_procesada = self.cargar_y_preprocesar_imagen(url_imagen)
+            img = image.load_img(url_imagen, target_size=(224, 224))  # Asegúrate de usar el tamaño correcto para tu modelo
+            img_array = image.img_to_array(img)
+            img_array = np.expand_dims(img_array, axis=0)  # Añadir una dimensión para que sea compatible con el batch
+            img_array = preprocess_input(img_array)  # Preprocesar según el modelo utilizado (para ResNet50, por ejemplo)
+
+            # Hacer una predicción
+            prediccion = modelo.predict(img_array)
+
+            # Decodificar la predicción
+            clases = ['Sano', 'Enfermo_BODYROT', 'Enfermo_STEMENDROT']  # Cambia esto según tus clases
+            indice_prediccion = np.argmax(prediccion[0])  # Obtener el índice de la clase con mayor probabilidad
+            print(f'Predicción: {clases[indice_prediccion]}')
+            text_label = tk.Label(self.text_label, text=f"Clasificación = {clases[indice_prediccion]} ", font=("Arial", 14, "bold"))
+            text_label.place(x=0, y=10)
+
+
 
     def reset_images(self):
         # Clear image_label content
@@ -179,7 +213,7 @@ class Aplication:
         # Clear text_label content
         self.text_label.config(text="")  # Empty string for text
 
-#hola prueba
+
 
 aplication = Aplication()
 
