@@ -185,8 +185,12 @@ class Aplication:
         image_label.photo = op_or_photo  # Mantener una referencia para evitar la recolección de basura
         image_label.place(x=0, y=0)
 
-        text_label = tk.Label(self.text_label, text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
-        text_label.place(x=0, y=0)
+        self.text_label.config(text=" ")
+        self.text_label.update()
+
+        #text_label = tk.Label(self.text_label, text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
+        self.text_label.config(text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
+        self.text_label.place(x=30, y=600)
 
     def clasificacion_imagen(self):
             modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
@@ -205,8 +209,11 @@ class Aplication:
             print(f'Predicción: {clases[indice_prediccion]}')
             #Limpiar el texto
             self.text_label.config(text="")
-            text_label = tk.Label(self.text_label, text=f"Clasificación = {clases[indice_prediccion]} ", font=("Arial", 14, "bold"))
-            text_label.place(x=0, y=10)
+            #self.text_label.update()
+            #text_label = tk.Label(self.text_label, text=f"Clasificación = {clases[indice_prediccion]} ", font=("Arial", 14, "bold"))
+            #text_label.place(x=0, y=10)
+            self.text_label.config(text=f"Clasificación = {clases[indice_prediccion]}", font=("Arial", 14, "bold"))
+            self.text_label.place(x=30, y=600)
 
 
 
