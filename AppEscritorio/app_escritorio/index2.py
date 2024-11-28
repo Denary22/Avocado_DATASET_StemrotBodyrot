@@ -1,3 +1,4 @@
+#Bibliotecas aplicación
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog  as fd #Ventanas de dialogo
@@ -5,25 +6,17 @@ from PIL import Image
 from PIL import ImageTk
 import cv2
 import numpy as np
-
-#Bibliotecas aplicación
-import cv2
-import math
-import numpy as np
+#Biblioteca externa
 from rembg import remove
-from PIL import Image
 import matplotlib.pyplot as plt
 
 #Modelo CNN
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import preprocess_input
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
-
-#url_imagen = ""
 imagenes_seleccionadas = []
 class Aplication:
     
@@ -48,11 +41,6 @@ class Aplication:
         self.text_label = tk.Label(self.raiz, bg="#F1F0F0")
         self.text_label.place(x=30, y=600, width=730, height=150)
 
-        # Canvas para mostrar las imágenes
-        #self.canvas = tk.Canvas(self.raiz, width=270, height=390)
-        #self.canvas.place(x=60, y=145, width=280, height=390)
-        #self.canvas.pack(pady=10)
-
 
         tk.Label(self.raiz, text="Generar histograma: ", bg="#F1F0F0").place(relx=0.704, rely=0.095,)
         self.Acciones = ttk.Combobox(self.raiz, state="disabled")
@@ -61,14 +49,20 @@ class Aplication:
         self.Acciones.bind("<<ComboboxSelected>>",  self.AccionElegida)
         self.Acciones.current(0)
 
+        tk.Label(self.raiz, text="Seleccionar modelo CNN: ", bg="#F1F0F0").place(relx=0.704, rely=0.310,)
+        self.clasificion = ttk.Combobox(self.raiz, state="disabled")
+        self.clasificion['values']=['VGG16','MobileNetV2']
+        self.clasificion.place(relx=0.706, rely=0.336, relwidth=0.16)
+        self.clasificion.bind("<<ComboboxSelected>>",  self.clasificacion_imagen)
+        self.clasificion.current(1)
 
         #Botones
         self.boton = tk.Button(text="Elegir imagen", bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.seleccionar)
         self.boton.place(x=340, y=70, width=120)
         self.boton_area = tk.Button(self.raiz, text="ÁREA DAÑADA", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 6, "bold"), borderwidth = 0, command=self.area_dañada, state="disabled")
         self.boton_area.place(x= 704, y= 166, width=100, height=47)
-        self.boton_clasific= tk.Button(self.raiz, text="CLASIFICACIÓN ENFERMEDAD", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.clasificacion_imagen, state="disabled")
-        self.boton_clasific.place(x= 704, y= 242, width=260, height=47)
+        #self.boton_clasific= tk.Button(self.raiz, text="CLASIFICACIÓN ENFERMEDAD", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.clasificacion_imagen, state="disabled")
+        #self.boton_clasific.place(x= 704, y= 242, width=260, height=47)
         self.boton_maduracion = tk.Button(self.raiz, text="NIVEL DE MADURACIÓN", width=2, height=2, bg="#73B731", fg="#ffffff",font=("Verdana", 9, "bold"), borderwidth = 0, state="disabled")
         self.boton_maduracion.place(x= 704, y= 318, width=260, height=47)
         self.boton_reset = tk.Button(self.raiz, text="REINICIAR", width=2, height=2, bg="#73B731", fg="white",font=("Verdana", 9, "bold"), borderwidth = 0, command=self.reset_images, state="disabled")
@@ -160,10 +154,11 @@ class Aplication:
 
                 # Habilitar botones de navegación y funcionalidades
                 self.boton_area.configure(state="normal")
-                self.boton_clasific.configure(state="normal")
+                #self.boton_clasific.configure(state="normal")
                 self.boton_maduracion.configure(state="normal")
                 self.boton_reset.configure(state="normal")
                 self.Acciones.configure(state="readonly")
+                self.clasificion.configure(state="readonly")
                 if len(self.imagenes) > 1:
                     self.boton_anterior.configure(state="normal")
                     self.boton_siguiente.configure(state="normal")
@@ -310,13 +305,18 @@ class Aplication:
                     self.boton_siguiente_2.configure(state="normal")
 
 
-    def clasificacion_imagen(self):
+    def clasificacion_imagen(self, eventObject):
         if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
-            # Cargar el modelo previamente entrenado
-            modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
-
-            clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Define tus clases
+            clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Definimos las clases
             resultados = []  # Lista para guardar los resultados
+            if eventObject.widget.get()=="MobileNetV2":
+                # Cargar el modelo previamente entrenado
+                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/50_2/Modelo_Final_MobilNet.keras')
+
+            else:
+                # Cargar el modelo previamente entrenado
+                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
+                
 
             for url_imagen in imagenes_seleccionadas:
                 # Preprocesar la imagen
@@ -358,7 +358,7 @@ class Aplication:
 
 
 
-
+    #Función para reiniciar los valores 
     def reset_images(self):
         # Clear image_label content
         self.image_label.config(image="")  # Empty string for image
