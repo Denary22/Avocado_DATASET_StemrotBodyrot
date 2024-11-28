@@ -102,80 +102,33 @@ class Aplication:
         )
         self.boton_siguiente.place(x=200, y=550, width=120)
 
+        self.boton_anterior_2 = tk.Button(
+            self.raiz, text="Anterior", 
+            bg="#73B731", fg="#ffffff", font=("Verdana", 9, "bold"), 
+            borderwidth=0, 
+            command=self.mostrar_anterior_2, 
+            state="disabled"
+        )
+        self.boton_anterior_2.place(x=370, y=550, width=120)
+
+        self.boton_siguiente_2 = tk.Button(
+            self.raiz, text="Siguiente", 
+            bg="#73B731", fg="#ffffff", font=("Verdana", 9, "bold"), 
+            borderwidth=0, 
+            command=self.mostrar_siguiente_2, 
+            state="disabled"
+        )
+        self.boton_siguiente_2.place(x=540, y=550, width=120)
+
         self.raiz.mainloop() 
 
         # Atributos para la galería
         self.imagenes = []  # Lista de imágenes cargadas
+        self.imagenes_area_dañada = []
         self.indice_actual = 0  # Índice de la imagen actual
+        self.indice_actual_2 = 0  # Índice de la imagen actual
+        self.porcentajes_area_dañada = []
 
-    
-
-    """def seleccionar(self):
-            #global imagenes_seleccionadas []
-
-
-            #nomArchivo = fd.askopenfilename(initialdir= "C:/Users/USER/OneDrive/Escritorio/AImages", title= "Seleccionar Archivo", filetypes= (("Image files", "*.png; *.jpg; *.gif"),("todos los archivos", "*.*")))
-            rutas_imagenes = fd.askopenfilenames(
-                title="Selecciona imágenes",
-                filetypes=[("Archivos de imagen", "*.jpg *.jpeg *.png *.bmp")]
-            )
-
-             # Borrar el Canvas y la lista de imágenes
-            self.canvas.delete("all")
-            imagenes_seleccionadas.clear()
-
-            # Guardar las rutas en la lista
-            if rutas_imagenes:
-                imagenes_seleccionadas.extend(rutas_imagenes)
-                print("Imágenes seleccionadas:")
-                for ruta in imagenes_seleccionadas:
-                    print(ruta)
-            
-            if imagenes_seleccionadas:
-                num_imagenes = len(imagenes_seleccionadas)
-                espacio_ancho = 270
-                espacio_alto = 390
-
-                if(num_imagenes>4):
-                    ancho_imagen = espacio_ancho
-                    alto_imagen = espacio_alto // 4
-                else: 
-                    # Calcular dimensiones para cada imagen
-                    ancho_imagen = espacio_ancho
-                    alto_imagen = espacio_alto // num_imagenes
-
-                # Cargar y ajustar cada imagen
-                for idx, ruta in enumerate(rutas_imagenes):
-                    image = Image.open(ruta)
-                    
-                    # Detectar si la imagen es horizontal
-                    if image.width > image.height:
-                        # Rotar la imagen para que quede vertical
-                        image = image.rotate(90, expand=True)
-
-                    # Redimensionar la imagen para que ajuste al espacio calculado
-                    image = image.resize((ancho_imagen, alto_imagen), Image.Resampling.LANCZOS)
-                    
-                    # Convertir a PhotoImage y almacenar
-                    photo = ImageTk.PhotoImage(image)
-                    #imagenes_seleccionadas.append(photo)  # Almacenarla para evitar que se borre
-
-                    # Calcular la posición y mostrar la imagen
-                    y_position = idx * alto_imagen
-                    self.canvas.create_image(0, y_position, anchor="nw", image=photo)
-
-                    if (idx == 3):
-                        break
-
-                # Habilitar botones
-                self.boton_area.configure(state="normal")
-                self.boton_clasific.configure(state="normal")
-                self.boton_maduracion.configure(state="normal")
-                self.boton_reset.configure(state="normal")
-                self.Acciones.configure(state="readonly")
-            #url_imagen = nomArchivo
-            #print(url_imagen)"""
-    
     def seleccionar(self):
             # Abrir cuadro de diálogo para seleccionar múltiples imágenes
         archivos = fd.askopenfilenames(
@@ -247,8 +200,9 @@ class Aplication:
     
 
     def area_dañada(self):
-        #img = Image.open(file_path)
-        #img = cv2.imread(url_imagen)
+        self.imagenes_area_dañada = []  # Lista para almacenar imágenes cargadas
+        self.indice_actual_2 = 0  # Reiniciar índice actual
+        self.porcentajes_area_dañada = []
         for url_img in imagenes_seleccionadas:
             img = cv2.imread(url_img)
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -320,10 +274,6 @@ class Aplication:
             #Operación OR
             op_or = cv2.bitwise_or(img, areAfectada_3canales)
 
-            #Colocar en el cuadro
-            standard_width = 310
-            standard_height = 390
-
             # Convertir la imagen RGB a un objeto Image de PIL
             op_or_pil_image = Image.fromarray(op_or)
 
@@ -338,6 +288,8 @@ class Aplication:
             # Convertir la imagen PIL a un objeto PhotoImage de Tkinter
             op_or_photo = ImageTk.PhotoImage(op_or_pil_image)
 
+            #Guardar la imagen en la lista
+            self.imagenes_area_dañada.append(op_or_photo)
             # Crear una etiqueta para mostrar la imagen
             image_label = tk.Label(self.image_label2, image=op_or_photo)
             image_label.photo = op_or_photo  # Mantener una referencia para evitar la recolección de basura
@@ -348,28 +300,16 @@ class Aplication:
 
             #text_label = tk.Label(self.text_label, text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
             self.text_label.config(text=f"Porcentaje área dañada = {areaDañada:.2f} %", font=("Arial", 14, "bold"))
+            self.porcentajes_area_dañada.append(f"Porcentaje área dañada = {areaDañada:.2f} %")
             self.text_label.place(x=30, y=600)
+        
+        # Mostrar la primera imagen de la lista
+        self.image_label2.configure(image=self.imagenes_area_dañada[self.indice_actual_2])
+        if len(self.imagenes_area_dañada) > 1:
+                    self.boton_anterior_2.configure(state="normal")
+                    self.boton_siguiente_2.configure(state="normal")
 
-    """def clasificacion_imagen(self):
-            if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
-                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
-                #imagen_procesada = self.cargar_y_preprocesar_imagen(url_imagen)
-                img = image.load_img(url_imagen, target_size=(224, 224))  # Asegúrate de usar el tamaño correcto para tu modelo
-                img_array = image.img_to_array(img)
-                img_array = np.expand_dims(img_array, axis=0)  # Añadir una dimensión para que sea compatible con el batch
-                img_array = preprocess_input(img_array)  # Preprocesar según el modelo utilizado (para ResNet50, por ejemplo)
 
-                # Hacer una predicción
-                prediccion = modelo.predict(img_array)
-
-                # Decodificar la predicción
-                clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Cambia esto según tus clases
-                indice_prediccion = np.argmax(prediccion[0])  # Obtener el índice de la clase con mayor probabilidad
-                print(f'Predicción: {clases[indice_prediccion]}')
-                #Limpiar el texto
-                self.text_label.config(text="")
-                self.text_label.config(text=f"Clasificación = {clases[indice_prediccion]}", font=("Arial", 14, "bold"))
-                self.text_label.place(x=30, y=600)"""
     def clasificacion_imagen(self):
         if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
             # Cargar el modelo previamente entrenado
@@ -447,6 +387,25 @@ class Aplication:
             # Mover al índice siguiente
             self.indice_actual = (self.indice_actual + 1) % len(self.imagenes)
             self.mostrar_imagen()
+    
+    def mostrar_imagen_2(self):
+        if self.imagenes_area_dañada:
+            # Mostrar la imagen actual
+            self.image_label2.configure(image=self.imagenes_area_dañada[self.indice_actual_2])
+            self.text_label.config(text=self.porcentajes_area_dañada[self.indice_actual_2], font=("Arial", 14, "bold"))
+            self.text_label.place(x=30, y=600)
+
+    def mostrar_anterior_2(self):
+        if self.imagenes_area_dañada:
+            # Mover al índice anterior
+            self.indice_actual_2 = (self.indice_actual_2 - 1) % len(self.imagenes_area_dañada)
+            self.mostrar_imagen_2()
+
+    def mostrar_siguiente_2(self):
+        if self.imagenes_area_dañada:
+            # Mover al índice siguiente
+            self.indice_actual_2 = (self.indice_actual_2 + 1) % len(self.imagenes_area_dañada)
+            self.mostrar_imagen_2()
 
     def generar_reporte(self):
         # Aquí puedes implementar la lógica para generar un reporte
