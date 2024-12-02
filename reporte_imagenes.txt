@@ -1,3 +1,4 @@
-Se cargaron 2 imágenes.
+Se cargaron 3 imágenes.
 Imagen 1: procesada correctamente.
 Imagen 2: procesada correctamente.
+Imagen 3: procesada correctamente.
