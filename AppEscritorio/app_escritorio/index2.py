@@ -113,6 +113,8 @@ class Aplication:
         self.indice_actual = 0  # Índice de la imagen actual
         self.indice_actual_2 = 0  # Índice de la imagen actual
         self.porcentajes_area_dañada = []
+        self.labels_clasificación = []
+        self.clasific= []
 
         
 
@@ -304,6 +306,8 @@ class Aplication:
 
 
     def clasificacion_imagen(self, eventObject):
+        self.labels_clasificación = []
+        self.clasific=[]
         if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
             clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Definimos las clases
             resultados = []  # Lista para guardar los resultados
@@ -333,6 +337,12 @@ class Aplication:
                 # Guardar resultado en la lista
                 nombre_imagen = url_imagen.split('/')[-1]  # Obtener solo el nombre del archivo
                 resultados.append(f"{nombre_imagen}: {clase_predicha} con una probabilidad de {probabilidad:.2f}")
+                self.labels_clasificación.append(f"{nombre_imagen}: {clase_predicha}")
+                if(clase_predicha == 'Sano' ):
+                    self.clasific.append(0)
+                else:
+                    self.clasific.append(1)
+
 
             # Crear una nueva ventana para mostrar todos los resultados
             ventana_resultados = tk.Toplevel(self.raiz)
@@ -421,10 +431,94 @@ class Aplication:
     def actualizar_imagen(self, event=None):
         """ Actualiza la imagen con los nuevos valores de los sliders. """
         self.area_dañada()
+
+    def area_dañada_mod(self, lista):
+        porcentajes_area_dañada = []
+        for url_img in lista:
+            img = cv2.imread(url_img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            img_remove = remove(img)
+            img_gaussiana = cv2.GaussianBlur(img_remove, (15,15), 0)
+            img_gris = cv2.cvtColor(img_gaussiana, cv2.COLOR_BGR2GRAY)
+            ret, th = cv2.threshold(img_gris, 1, 255, cv2.THRESH_BINARY)
+            pixeles_blancos = np.where(th == 255, 1, 0)
+            numero_pixeles_blancos = pixeles_blancos.sum()
+            img_height, img_width, channels = img.shape
+            total_pixels = img_height * img_width
+            print("Total de pixeles = ",total_pixels)
+            print("Total de pixeles blancos = ", numero_pixeles_blancos)
+
+            #Dibujar contorno
+            #Algoritmo de Canny
+            canny_img_ext = cv2.Canny(th, 5, 15)
+            img_contCanny = th.copy()
+            cont, ret = cv2.findContours(canny_img_ext, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cv2.drawContours(img_contCanny, cont, -1, (0,0,0), 200)
+            #Operación OR
+            op_or_ext = cv2.bitwise_and(img_gaussiana , img_gaussiana, mask=img_contCanny)
+
+            #Segmetación por color
+            # Se seleccionan los rangos de HSV
+            rango_min = np.array([self.slider_h_min.get(), self.slider_s_min.get(), self.slider_v_min.get()], np.uint8)
+            rango_max = np.array([self.slider_h_max.get(), self.slider_s_max.get(), self.slider_v_max.get()], np.uint8)
+
+            # Lectura de la imagen y conversión a HSV
+            imagen_HSV = cv2.cvtColor(op_or_ext, cv2.COLOR_RGB2HSV)
+
+            # Creación de la mascara de color
+            mascara = cv2.inRange(imagen_HSV, rango_min, rango_max)
+            segmentada_color = cv2.bitwise_and(img, img, mask=mascara)
+
+            #Umbralización el area dañanda
+            img_gris_dañada = cv2.cvtColor(segmentada_color, cv2.COLOR_BGR2GRAY)
+            ret, areAfectada = cv2.threshold(img_gris_dañada, 1, 255, cv2.THRESH_BINARY)
+
+            #Calculo del área dañada
+            pixeles_blancos_dañados = np.where(areAfectada == 255, 1, 0)
+            numero_pixeles_blancos_dañados = pixeles_blancos_dañados.sum()
+
+            areaDañada = ((numero_pixeles_blancos_dañados*100)/numero_pixeles_blancos)
+            #print("Total de pixeles dañados = ", numero_pixeles_blancos_dañados)
+            porcentajes_area_dañada.append(f"Porcentaje área dañada = {areaDañada:.2f} %")
+
+        print(porcentajes_area_dañada)
+        return porcentajes_area_dañada
+
+
     
     def analisis_completo(self):
         self.clasificacion_imagen("VGG16")
-        self.area_dañada()
+        imagenes_dañadas = []
+        imagenes = imagenes_seleccionadas.copy
+        print(self.clasific)
+        for idx, imagen in enumerate(imagenes_seleccionadas):
+            if(self.clasific[idx]== 1):
+                imagenes_dañadas.append(imagen)
+        area_dañada = self.area_dañada_mod(imagenes_dañadas)
+
+        if hasattr(self, 'labels_clasificación') and self.labels_clasificación:
+            with open("reporte_analisis.txt", "w") as f:
+                f.write(f"Se cargaron {len(self.imagenes)} imagenes.\n")
+                index=0
+                for idx, img in enumerate(self.imagenes):
+                    nombre_img = self.labels_clasificación[idx].split(": ")
+                    if(self.clasific[idx]== 1):
+                        f.write(f"{idx+1}. Imagen: {nombre_img[0]}.\n")
+                        f.write(f" Enfermedad: {nombre_img[1]}.\n")
+                        f.write(f" {area_dañada[idx-index]}\n")
+                    else:
+                        f.write(f"{idx+1}. Imagen: {nombre_img[0]}.\n")
+                        f.write(f" Enfermedad: {nombre_img[1]}.\n")
+                        index=index+1
+
+
+            print("Reporte generado: reporte_imagenes.txt")
+        else:
+            print("No hay imágenes cargadas para generar un reporte.")
+
+        print(self.labels_clasificación)
+        print(area_dañada)
 
 
 
