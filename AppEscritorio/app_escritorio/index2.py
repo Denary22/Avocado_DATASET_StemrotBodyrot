@@ -1,8 +1,8 @@
 #Bibliotecas aplicación
+import fitz  # Importar PyMuPDF para manejar PDFs
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog  as fd #Ventanas de dialogo
-from tkinter import Scale
 from PIL import Image
 from PIL import ImageTk
 import cv2
@@ -10,14 +10,12 @@ import numpy as np
 #Biblioteca externa
 from rembg import remove
 import matplotlib.pyplot as plt
-
 #Modelo CNN
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.vgg16 import preprocess_input
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
-import customtkinter as ctk
+#from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 
 imagenes_seleccionadas = []
@@ -25,11 +23,13 @@ class Aplication:
     
     def __init__(self):
         self.raiz = tk.Tk() 
-        self.raiz.title("Prototipo 1") #Cambiar el nombre de la ventana 
+        self.raiz.title("AvoVision") #Cambiar el nombre de la ventana 
         self.raiz.geometry("1024x768") #Configurar tamaño
         self.raiz.resizable(width=0, height=0)
         #self.raiz.iconbitmap("./Imagenes/ant.ico") #Cambiar el icono
-        self.imagen= tk.PhotoImage(file="./AppEscritorio/app_escritorio/fondo2.png")
+        #self.imagen= tk.PhotoImage(file="_internal/fondo2.png")
+        self.imagen= tk.PhotoImage(file="fondo2.png")
+
         tk.Label(self.raiz, image=self.imagen, bd=0, bg="white").pack()
 
         #Labels
@@ -80,6 +80,9 @@ class Aplication:
         self.boton_anterior_2.place(x=660, y=500, width=120)
         self.boton_siguiente_2 = tk.Button(self.raiz, text="Siguiente", bg="#73B731", fg="#ffffff", font=("Verdana", 9, "bold"), borderwidth=0, command=self.mostrar_siguiente_2, state="disabled")
         self.boton_siguiente_2.place(x=835, y=500, width=120)
+        # Botón "Manual"
+        self.boton_manual = tk.Button(text="Manual", bg="#73B731", fg="#ffffff", font=("Montserrat", 9, "bold"), borderwidth=0, command=self.abrir_manual)
+        self.boton_manual.place(x=740, y=35, width=120)
 
         # Crear sliders
         #self.slider_h_min = tk.Scale(self.raiz, from_=0, to=360, orient="horizontal", label="H Min", state="normal")
@@ -312,13 +315,13 @@ class Aplication:
             clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Definimos las clases
             resultados = []  # Lista para guardar los resultados
             if eventObject == "VGG16":
-                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
+                modelo = tf.keras.models.load_model('modelo_entrenado_VGG16.keras')
             elif eventObject.widget.get()=="MobileNetV2":
                 # Cargar el modelo previamente entrenado
-                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/50_2/Modelo_Final_MobilNet.keras')
+                modelo = tf.keras.models.load_model('modelo_entrenado_MobileNet.keras')
             else:
                 # Cargar el modelo previamente entrenado
-                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
+                modelo = tf.keras.models.load_model('modelo_entrenado_VGG16.keras')
                 
 
             for url_imagen in imagenes_seleccionadas:
@@ -336,7 +339,7 @@ class Aplication:
 
                 # Guardar resultado en la lista
                 nombre_imagen = url_imagen.split('/')[-1]  # Obtener solo el nombre del archivo
-                resultados.append(f"{nombre_imagen}: {clase_predicha} con una probabilidad de {probabilidad:.2f}")
+                resultados.append(f"{nombre_imagen}: {clase_predicha} con una certeza del {probabilidad*100:.2f}%")
                 self.labels_clasificación.append(f"{nombre_imagen}: {clase_predicha}")
                 if(clase_predicha == 'Sano' ):
                     self.clasific.append(0)
@@ -379,7 +382,16 @@ class Aplication:
         # Clear text_label content
         self.text_label.config(text="")  # Empty string for text
 
+        global imagenes_seleccionadas
+        imagenes_seleccionadas = []
         self.imagenes_seleccionadas = []
+        self.imagenes = []  # Lista de imágenes cargadas
+        self.imagenes_area_dañada = []
+        self.indice_actual = 0  # Índice de la imagen actual
+        self.indice_actual_2 = 0  # Índice de la imagen actual
+        self.porcentajes_area_dañada = []
+        self.labels_clasificación = []
+        self.clasific= []
 
     def mostrar_imagen(self):
         if self.imagenes:
@@ -520,6 +532,58 @@ class Aplication:
         print(self.labels_clasificación)
         print(area_dañada)
 
+    def abrir_manual(self):
+        """Función para abrir un PDF interactivamente."""
+        pdf_path = "manual.pdf"  # Cambia esta ruta al PDF de tu manual
+        
+        try:
+            doc = fitz.open(pdf_path)
+            ventana_pdf = tk.Toplevel(self.raiz)
+            ventana_pdf.title("Manual de Usuario")
+            ventana_pdf.geometry("800x600")
+
+            # Canvas para mostrar el PDF
+            canvas = tk.Canvas(ventana_pdf, width=800, height=600, bg="white")
+            canvas.pack(fill=tk.BOTH, expand=True)
+
+            # Mostrar la primera página
+            pagina_actual = 0
+            image = doc[pagina_actual].get_pixmap()
+            img_data = image.tobytes("ppm")
+            img = ImageTk.PhotoImage(data=img_data)
+            canvas.create_image(0, 0, anchor="nw", image=img)
+            canvas.image = img
+
+            # Botones para navegar el PDF
+            def siguiente_pagina():
+                nonlocal pagina_actual
+                if pagina_actual < len(doc) - 1:
+                    pagina_actual += 1
+                    image = doc[pagina_actual].get_pixmap()
+                    img_data = image.tobytes("ppm")
+                    img = ImageTk.PhotoImage(data=img_data)
+                    canvas.create_image(0, 0, anchor="nw", image=img)
+                    canvas.image = img
+
+            def pagina_anterior():
+                nonlocal pagina_actual
+                if pagina_actual > 0:
+                    pagina_actual -= 1
+                    image = doc[pagina_actual].get_pixmap()
+                    img_data = image.tobytes("ppm")
+                    img = ImageTk.PhotoImage(data=img_data)
+                    canvas.create_image(0, 0, anchor="nw", image=img)
+                    canvas.image = img
+            
+            # Botones de navegación
+            boton_anterior = tk.Button(ventana_pdf, text="Anterior", command=pagina_anterior)
+            boton_anterior.pack(side=tk.LEFT, padx=10, pady=5)
+
+            boton_siguiente = tk.Button(ventana_pdf, text="Siguiente", command=siguiente_pagina)
+            boton_siguiente.pack(side=tk.RIGHT, padx=10, pady=5)
+
+        except Exception as e:
+            print(f"Error al abrir el PDF: {e}")
 
 
 

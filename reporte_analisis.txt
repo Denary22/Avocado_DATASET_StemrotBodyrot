@@ -1,9 +1,10 @@
 Se cargaron 3 imagenes.
-1. Imagen: 510494_1_En_10_Fig4_HTML1.png.
- Enfermedad: Enfermo_Body_Rot.
-Porcentaje área dañada = 0.98 %
-2. Imagen: Copia de images.jpg.
- Enfermedad: Sano.
-3. Imagen: SR2_13.JPG.
+1. Imagen: SR2_5.JPG.
  Enfermedad: Enfermo_Stem_end_Rot.
-Porcentaje área dañada = 21.01 %
+ Porcentaje área dañada = 68.75 %
+2. Imagen: SR2_11.JPG.
+ Enfermedad: Enfermo_Stem_end_Rot.
+ Porcentaje área dañada = 60.76 %
+3. Imagen: SR2_12.JPG.
+ Enfermedad: Enfermo_Stem_end_Rot.
+ Porcentaje área dañada = 80.07 %
