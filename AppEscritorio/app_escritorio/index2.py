@@ -28,7 +28,7 @@ class Aplication:
         self.raiz.resizable(width=0, height=0)
         #self.raiz.iconbitmap("./Imagenes/ant.ico") #Cambiar el icono
         #self.imagen= tk.PhotoImage(file="_internal/fondo2.png")
-        self.imagen= tk.PhotoImage(file="fondo2.png")
+        self.imagen= tk.PhotoImage(file="./Avocado_DATASET_StemrotBodyrot/AppEscritorio/app_escritorio/fondo2.png")
 
         tk.Label(self.raiz, image=self.imagen, bd=0, bg="white").pack()
 
@@ -69,8 +69,10 @@ class Aplication:
         self.boton_reset = tk.Button(self.raiz, text="Reiniciar", width=2, height=2, bg="white", fg="black",font=("Montserrat", 10, "bold"), borderwidth = 0, command=self.reset_images, state="disabled")
         self.boton_reset.place(x= 20, y=700, width=170, height=40)
         # Botón "Generar Reporte" (después de "Elegir Imagen")
-        self.boton_reporte = tk.Button(text="Generar reporte", bg="white", fg="black", font=("Montserrat", 10, "bold"), borderwidth=0, command=self.generar_reporte, state="disabled")
-        self.boton_reporte.place(x=20, y=645, width=170, height=40) 
+        #self.boton_reporte = tk.Button(text="Generar reporte", bg="white", fg="black", font=("Montserrat", 10, "bold"), borderwidth=0, command=self.generar_reporte, state="disabled")
+        #self.boton_reporte.place(x=20, y=645, width=170, height=40)
+        self.boton_maduracion = tk.Button(text="Nivel de maduración", bg="white", fg="black", font=("Montserrat", 10, "bold"), borderwidth=0, command=self.nivel_maduracion, state="disabled")
+        self.boton_maduracion.place(x=20, y=645, width=170, height=40) 
         #Botones para cambiar imagenes
         self.boton_anterior = tk.Button(self.raiz, text="Anterior", bg="#73B731", fg="#ffffff", font=("Verdana", 9, "bold"), borderwidth=0, command=self.mostrar_anterior, state="disabled")
         self.boton_anterior.place(x=280, y=500, width=120)
@@ -152,7 +154,7 @@ class Aplication:
 
                 # Habilitar botones de navegación y funcionalidades
                 self.boton_area.configure(state="normal")
-                self.boton_reporte.configure(state="normal")
+                self.boton_maduracion.configure(state="normal")
                 self.boton_analisis.configure(state="normal")
                 self.boton_reset.configure(state="normal")
                 self.Acciones.configure(state="readonly")
@@ -369,6 +371,51 @@ class Aplication:
             # Botón para cerrar la ventana
             tk
 
+
+    def nivel_maduracion(self):
+        if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
+            clases = ['Maduro','Inmaduro']  # Definimos las clases
+            resultados = []  # Lista para guardar los resultados
+            modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16_nivel_maduración.keras')
+
+            for url_imagen in imagenes_seleccionadas:
+                # Preprocesar la imagen
+                img = image.load_img(url_imagen, target_size=(224, 224))
+                img_array = image.img_to_array(img)
+                img_array = np.expand_dims(img_array, axis=0)
+                img_array = preprocess_input(img_array)
+
+                # Hacer la predicción
+                prediccion = modelo.predict(img_array)
+                indice_prediccion = np.argmax(prediccion[0])
+                clase_predicha = clases[indice_prediccion]
+                probabilidad = np.max(prediccion[0])  # Obtener la probabilidad más alta
+
+                # Guardar resultado en la lista
+                nombre_imagen = url_imagen.split('/')[-1]  # Obtener solo el nombre del archivo
+                resultados.append(f"{nombre_imagen}: {clase_predicha} con una certeza del {probabilidad*100:.2f}%")
+
+            # Crear una nueva ventana para mostrar todos los resultados
+            ventana_resultados = tk.Toplevel(self.raiz)
+            ventana_resultados.title("Resultados del Nivel de Maduración")
+            ventana_resultados.geometry("500x400")
+
+            # Mostrar el título
+            tk.Label(ventana_resultados, text="Resultados del Nivel de Maduración", font=("Arial", 16, "bold")).pack(pady=10)
+
+            # Mostrar los resultados en un cuadro de texto (permite scroll si hay muchos)
+            cuadro_resultados = tk.Text(ventana_resultados, wrap=tk.WORD, font=("Arial", 12))
+            cuadro_resultados.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            # Insertar los resultados en el cuadro de texto
+            for resultado in resultados:
+                cuadro_resultados.insert(tk.END, resultado + "\n")
+
+            # Deshabilitar edición del cuadro de texto
+            cuadro_resultados.config(state=tk.DISABLED)
+
+            # Botón para cerrar la ventana
+            tk
 
 
     #Función para reiniciar los valores 
