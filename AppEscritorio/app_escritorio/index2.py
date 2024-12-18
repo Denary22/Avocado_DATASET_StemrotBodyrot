@@ -28,7 +28,7 @@ class Aplication:
         self.raiz.resizable(width=0, height=0)
         #self.raiz.iconbitmap("./Imagenes/ant.ico") #Cambiar el icono
         #self.imagen= tk.PhotoImage(file="_internal/fondo2.png")
-        self.imagen= tk.PhotoImage(file="./Avocado_DATASET_StemrotBodyrot/AppEscritorio/app_escritorio/fondo2.png")
+        self.imagen= tk.PhotoImage(file="fondo2.png")
 
         tk.Label(self.raiz, image=self.imagen, bd=0, bg="white").pack()
 
@@ -118,7 +118,7 @@ class Aplication:
         self.indice_actual = 0  # Índice de la imagen actual
         self.indice_actual_2 = 0  # Índice de la imagen actual
         self.porcentajes_area_dañada = []
-        self.labels_clasificación = []
+        self.labels_clasificacion = []
         self.clasific= []
 
         
@@ -311,19 +311,19 @@ class Aplication:
 
 
     def clasificacion_imagen(self, eventObject):
-        self.labels_clasificación = []
+        self.labels_clasificacion = []
         self.clasific=[]
         if imagenes_seleccionadas:  # Verificar si se seleccionaron archivos
             clases = ['Sano', 'Enfermo_Body_Rot', 'Enfermo_Stem_end_Rot']  # Definimos las clases
             resultados = []  # Lista para guardar los resultados
             if eventObject == "VGG16":
-                modelo = tf.keras.models.load_model('modelo_entrenado_VGG16.keras')
+                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
             elif eventObject.widget.get()=="MobileNetV2":
                 # Cargar el modelo previamente entrenado
-                modelo = tf.keras.models.load_model('modelo_entrenado_MobileNet.keras')
+                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_MobileNet.keras')
             else:
                 # Cargar el modelo previamente entrenado
-                modelo = tf.keras.models.load_model('modelo_entrenado_VGG16.keras')
+                modelo = tf.keras.models.load_model('D:/Documentos/Protocolo/app_escritorio/modelo_entrenado_VGG16.keras')
                 
 
             for url_imagen in imagenes_seleccionadas:
@@ -342,7 +342,7 @@ class Aplication:
                 # Guardar resultado en la lista
                 nombre_imagen = url_imagen.split('/')[-1]  # Obtener solo el nombre del archivo
                 resultados.append(f"{nombre_imagen}: {clase_predicha} con una certeza del {probabilidad*100:.2f}%")
-                self.labels_clasificación.append(f"{nombre_imagen}: {clase_predicha}")
+                self.labels_clasificacion.append(f"{nombre_imagen}: {clase_predicha}")
                 if(clase_predicha == 'Sano' ):
                     self.clasific.append(0)
                 else:
@@ -437,7 +437,7 @@ class Aplication:
         self.indice_actual = 0  # Índice de la imagen actual
         self.indice_actual_2 = 0  # Índice de la imagen actual
         self.porcentajes_area_dañada = []
-        self.labels_clasificación = []
+        self.labels_clasificacion = []
         self.clasific= []
 
     def mostrar_imagen(self):
@@ -556,12 +556,12 @@ class Aplication:
                 imagenes_dañadas.append(imagen)
         area_dañada = self.area_dañada_mod(imagenes_dañadas)
 
-        if hasattr(self, 'labels_clasificación') and self.labels_clasificación:
+        if hasattr(self, 'labels_clasificacion') and self.labels_clasificacion:
             with open("reporte_analisis.txt", "w") as f:
                 f.write(f"Se cargaron {len(self.imagenes)} imagenes.\n")
                 index=0
                 for idx, img in enumerate(self.imagenes):
-                    nombre_img = self.labels_clasificación[idx].split(": ")
+                    nombre_img = self.labels_clasificacion[idx].split(": ")
                     if(self.clasific[idx]== 1):
                         f.write(f"{idx+1}. Imagen: {nombre_img[0]}.\n")
                         f.write(f" Enfermedad: {nombre_img[1]}.\n")
@@ -576,7 +576,7 @@ class Aplication:
         else:
             print("No hay imágenes cargadas para generar un reporte.")
 
-        print(self.labels_clasificación)
+        print(self.labels_clasificacion)
         print(area_dañada)
 
     def abrir_manual(self):
