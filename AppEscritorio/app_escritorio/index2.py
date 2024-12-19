@@ -5,6 +5,10 @@ from tkinter import ttk
 from tkinter import filedialog  as fd #Ventanas de dialogo
 from PIL import Image
 from PIL import ImageTk
+#Biblioteca PDF 
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from tkinter import messagebox  # Para la ventana emergente
 import cv2
 import numpy as np
 #Biblioteca externa
@@ -63,7 +67,7 @@ class Aplication:
         self.boton = tk.Button(text="Elegir imagen", bg="#73B731", fg="#ffffff",font=("Montserrat", 9, "bold"), borderwidth = 0, command=self.seleccionar)
         self.boton.place(x=610, y=35, width=120)
         self.boton_area = tk.Button(self.raiz, text="Calcular área dañada", width=2, height=2, bg="white", fg="black",font=("Montserrat", 10, "bold"), borderwidth = 0, command=self.area_dañada, state="disabled")
-        self.boton_area.place(x= 20, y=240, width=170, height=40)
+        self.boton_area.place(x= 20, y=235, width=170, height=40)
         self.boton_analisis = tk.Button(self.raiz, text="Análisis completo", width=2, height=2, bg="white", fg="black",font=("Oswald", 10, "bold"), borderwidth = 0, command=self.analisis_completo, state="disabled")
         self.boton_analisis.place(x= 20, y=590, width=170, height=40)
         self.boton_reset = tk.Button(self.raiz, text="Reiniciar", width=2, height=2, bg="white", fg="black",font=("Montserrat", 10, "bold"), borderwidth = 0, command=self.reset_images, state="disabled")
@@ -87,25 +91,26 @@ class Aplication:
         self.boton_manual.place(x=740, y=35, width=120)
 
         # Crear sliders
+        tk.Label(self.raiz, text="Modificación de valores HSV: ",  bg="#729d39", fg="#ffffff", font=("Montserrat",10)).place(x=20, y=275)
         #self.slider_h_min = tk.Scale(self.raiz, from_=0, to=360, orient="horizontal", label="H Min", state="normal")
         self.slider_h_min = tk.Scale(self.raiz,from_=0,to=360,orient="horizontal",label="H Min", state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_h_min.set(18)
-        self.slider_h_min.place(x=20, y=290, width=80 )
+        self.slider_h_min.place(x=20, y=295, width=80 )
         self.slider_h_max = tk.Scale(self.raiz, from_=0, to=360, orient="horizontal", label="H Max", state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_h_max.set(23)
-        self.slider_h_max.place(x=110, y=290,  width=80 )
+        self.slider_h_max.place(x=110, y=295,  width=80 )
         self.slider_s_min = tk.Scale(self.raiz, from_=0, to=255, orient="horizontal", label="S Min",  state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_s_min.set(0)
-        self.slider_s_min.place(x=20, y=352, width=80)
+        self.slider_s_min.place(x=20, y=357, width=80)
         self.slider_s_max = tk.Scale(self.raiz, from_=0, to=255, orient="horizontal", label="S Max",  state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_s_max.set(255)
-        self.slider_s_max.place(x=110, y=352, width=80)
+        self.slider_s_max.place(x=110, y=357, width=80)
         self.slider_v_min = tk.Scale(self.raiz, from_=0, to=255, orient="horizontal", label="V Min",  state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_v_min.set(0)
-        self.slider_v_min.place(x=20, y=410, width=80)
+        self.slider_v_min.place(x=20, y=415, width=80)
         self.slider_v_max = tk.Scale(self.raiz, from_=0, to=255, orient="horizontal", label="V Max", state="normal",length=50,  bg="#729d39",  activebackground="#729d39", troughcolor="white", fg="white",  highlightthickness=0)
         self.slider_v_max.set(255)
-        self.slider_v_max.place(x=110, y=410, width=80)
+        self.slider_v_max.place(x=110, y=415, width=80)
         # Crear botón para actualizar la imagen
         self.boton_actualizar = tk.Button(self.raiz, text="Volver a calcular", width=2, height=2, bg="white", fg="black",font=("Montserrat", 8, "bold"), borderwidth = 0, state="disabled", command=self.actualizar_imagen)
         self.boton_actualizar.place(x=50, y=480, width=100, height=20)
@@ -544,37 +549,67 @@ class Aplication:
         print(porcentajes_area_dañada)
         return porcentajes_area_dañada
 
-
-    
     def analisis_completo(self):
         self.clasificacion_imagen("VGG16")
         imagenes_dañadas = []
-        imagenes = imagenes_seleccionadas.copy
+        imagenes = imagenes_seleccionadas.copy()
         print(self.clasific)
+
+        # Identificar imágenes dañadas
         for idx, imagen in enumerate(imagenes_seleccionadas):
-            if(self.clasific[idx]== 1):
+            if self.clasific[idx] == 1:
                 imagenes_dañadas.append(imagen)
+        
+        # Calcular el área dañada
         area_dañada = self.area_dañada_mod(imagenes_dañadas)
 
-        if hasattr(self, 'labels_clasificacion') and self.labels_clasificacion:
-            with open("reporte_analisis.txt", "w") as f:
-                f.write(f"Se cargaron {len(self.imagenes)} imagenes.\n")
-                index=0
-                for idx, img in enumerate(self.imagenes):
-                    nombre_img = self.labels_clasificacion[idx].split(": ")
-                    if(self.clasific[idx]== 1):
-                        f.write(f"{idx+1}. Imagen: {nombre_img[0]}.\n")
-                        f.write(f" Enfermedad: {nombre_img[1]}.\n")
-                        f.write(f" {area_dañada[idx-index]}\n")
-                    else:
-                        f.write(f"{idx+1}. Imagen: {nombre_img[0]}.\n")
-                        f.write(f" Enfermedad: {nombre_img[1]}.\n")
-                        index=index+1
+        # Validar datos y generar el PDF
+        if hasattr(self.imagenes, '__iter__') and self.labels_clasificacion:
+            pdf_filename = "reporte_analisis.pdf"
+            c = canvas.Canvas(pdf_filename, pagesize=letter)
+            c.setFont("Helvetica", 15)
 
+            # Título
+            c.drawString(100, 750, f"Reporte de Análisis - {len(self.imagenes)} imágenes procesadas")
 
-            print("Reporte generado: reporte_imagenes.txt")
+            y_position = 700
+            index = 0
+            for idx, img in enumerate(self.imagenes):
+                nombre_img = self.labels_clasificacion[idx].split(": ")
+                
+                # Texto informativo
+                c.drawString(50, y_position, f"{idx+1}. Imagen: {nombre_img[0]}")
+                c.drawString(50, y_position - 20, f"  Enfermedad: {nombre_img[1]}")
+
+                if self.clasific[idx] == 1:
+                    c.drawString(50, y_position - 40, f" {area_dañada[idx - index]}")
+                    y_position -= 60
+                else:
+                    y_position -= 40
+                    index += 1
+
+                # Inserción de la imagen en el PDF
+                try:
+                    image_path = imagenes_seleccionadas[idx]  
+                    c.drawImage(image_path, 50, y_position - 150, width=200, height=150)  
+                    y_position -= 180  # Ajustar espacio después de colocar la imagen
+                except Exception as e:
+                    c.drawString(50, y_position, "  (Error al cargar la imagen)")
+                    y_position -= 40
+
+                # Salto de página si es necesario
+                if y_position < 150:
+                    c.showPage()
+                    c.setFont("Helvetica", 10)
+                    y_position = 750
+
+            # Guardar el PDF
+            c.save()
+
+            # Ventana emergente indicando éxito
+            messagebox.showinfo("Generación de PDF", f"Reporte generado exitosamente: {pdf_filename}")
         else:
-            print("No hay imágenes cargadas para generar un reporte.")
+            messagebox.showerror("Error", "No hay imágenes cargadas o las imágenes no son válidas para generar un reporte.")
 
         print(self.labels_clasificacion)
         print(area_dañada)
